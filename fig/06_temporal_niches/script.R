@@ -7,11 +7,14 @@ library(behavr)
 library(maptools)
 library(patchwork)
 library(gratia)
+library(smacof)
+library(ggrepel)
+
 source('../helpers.R')
 
 dt <- make_dt()
 
-{
+
 pdf('plots.pdf', w=10, h=10)
 
 common_layers <- function(ncol=1, wrap=TRUE){
@@ -23,7 +26,7 @@ common_layers <- function(ncol=1, wrap=TRUE){
   o
 }
 
-p1 <- ggetho(dt[xmv(label_itc)==3], aes(y=temp, x=wt), summary_time_window = hours(1)) +
+p1 <- ggetho(dt[xmv(label_itc)==3], aes(y=temp, x=wt), 	y_time_window = hours(1)) +
   stat_ld_annotations(height = 1, alpha=.2, outline=NA) +
   stat_pop_etho() + scale_y_continuous(name=expression(Temperature~(degree*C))) +
   ggtitle('Average Temperture vs Datetime')
@@ -65,7 +68,7 @@ p <- ggetho(dt, aes(x=wt,y=N), summary_time_window = hours(1), time_wrap = hours
              mapping=aes(label=sprintf('N_total = %i',N_total)), inherit.aes = F, vjust = "inward", hjust = "inward")
 print(p)
 dev.off()
-}
+
 
 
 
@@ -76,312 +79,135 @@ tmp_dt <- cbind(sun_rise_set(test_dt[,start_datetime, meta=T], LATITUDE, LONGITU
 
 test_dt[, wstart_datetime := tmp_dt[,wzt(start_datetime, sunrise,sunset)], meta=T]
 
-pdf(w=10,h=18, 'misc.pdf')
+pdf(w=18,h=8, 'misc.pdf')
 
-ggetho(test_dt, aes(x=wt,y=N, colour=height),
+ggetho(test_dt, aes(x=wt,y=N),
              summary_time_window = hours(24)) +
-                #geom_vline(data=test_dt[, meta=T], aes(xintercept=wstart_datetime), col='blue',linetype=2)+
                 stat_pop_etho() +
-                common_layers(ncol = 3) 
-
-
-
-ggetho(test_dt, aes(x=wt,y=N, colour=height),
+                common_layers(ncol = 43) 
+print(p)
+p <- ggetho(test_dt, aes(x=wt,y=N),
            time_wrap = hours(24),
            time_offset = hours(6), summary_time_window = hours(1) ) +
               stat_pop_etho()  +
-              common_layers(ncol=3) +
+              common_layers(ncol=4) +
             stat_ld_annotations()
-
+print(p)
 dev.off()
 
 
+pdf(w=4,h=4, 'mds.pdf')
+start_dt <- rejoin(behavr::bin_apply_all(dt, N, x=t, x_bin_length=hours(1), wrap_x_by=days(1)))
+start_dt <- start_dt[label_itc %in% c(2,6,7,8,9,10,16, 17)]
+start_dt = start_dt[, .(N=mean(N)),keyby=.(label_itc,t)]
 
-##### covariance between coincidental insect capture rates?
-
-tmp_dt <- dt
-tmp_dt 
-
-cova_dt <- dt[xmv(label_itc) == 9, .(N_Sciaridae=N, wt)][rejoin(dt), on=c("wt")]
-cova_dt[, day := floor(t/days(1)) * days(1)]
-cova_dt
-
-plot_dt <- cova_dt[, .(N=mean(N), N_Sciaridae=mean(N_Sciaridae)), by=.(day, taxon)]
-
-ggplot(plot_dt, aes(N, N_Sciaridae)) + geom_point() + facet_wrap( ~ taxon)
+labs <- sort(unique(start_dt[,label_itc]))
 
 
-##### temp affects e. rosa daily rhythm
-test_dt <- dt[xmv(label_itc)==2]
-test_dt[, t := floor(wt/hours(1)) * hours(1)]
-test_dt = test_dt[, .SD[,.( N = sum(N),
-                            temp=mean(temp),
-                            hum=mean(hum),
-                            li=mean(light_intensity)
-
-                          ), by=t], by=id]
-
-
-test_dt[, device := xmv(device)]
-test_dt[, height := xmv(height)]
-test_dt[, zt := t %% hours(24)]
-
-test_dt[, day := floor(t/days(1)) * days(1)]
-test_dt = test_dt[, .SD[,.(day_mean_temp = mean(temp),
-                           day_mean_hum = mean(hum),
-                           day_mean_li = mean(li)
-                           ), by=day][.SD, on='day'], by=id]
-
-test_dt = test_dt[, last_24h_temp := rollmean(temp, 
-                                              k=24, 
-                                              align='right',
-                                              na.pad = TRUE),
-                  by=device]
-test_dt = test_dt[, last_24h_hum := rollmean(hum, 
-                                              k=24, 
-                                              align='right',
-                                              na.pad = TRUE),
-                  by=device]
-
-test_dt = test_dt[, last_24h_li := rollmean(li, 
-                                             k=24, 
-                                             align='right',
-                                             na.pad = TRUE),
-                  by=device]
-test_dt[, id_fact := as.factor(id)]
-test_dt[, height := as.factor(height)]
+dist_mat <- matrix(0, ncol=length(labs), nrow=length(labs),dimnames=list(labs,labs))
+combinations <- combn(as.character(labs),2)
+apply(combinations, 2, function(x){
+  i = x[1]
+  j = x[2]
+  # d  <- mutinformation(start_dt[label_itc == i]$N, start_dt[label_itc == j]$N)
+  d  <- 1 -cor(start_dt[label_itc == i]$N, start_dt[label_itc == j]$N)
+  dist_mat[i,j] <<- d
+  dist_mat[j,i] <<- d
+  NULL
+})
+diag(dist_mat) <- 0
+rownames(dist_mat) <- LABEL_MAP[labs]
+colnames(dist_mat) <- LABEL_MAP[labs]
 
 
-mod <- gam(N ~ s(zt, bs="cp" ) + 
-           s(day_mean_temp) +
-             s(day_mean_hum) +
-             s(day_mean_li) +
-           te(zt, last_24h_temp) +
-             te(zt, last_24h_hum) +
-             te(zt, last_24h_li) +
-           s(height,   bs='re'), # include trap height nested in id!?
-           # s(height,  by=id_fact, bs='re'), # include trap height nested in id!?
-           data=test_dt,
-           family = 'poisson', select = TRUE)
-summary(mod)
-AIC(mod)
+fit <- cmdscale(dist_mat,eig=TRUE, k=2) # k is the number of dim
+d <- as.data.table(fit$points)
+d[, taxon :=  rownames(fit$points)]
+p <- ggplot(d, aes(-V1, -V2))  + 
+  geom_point() +
+  geom_label_repel(aes(label =d$taxon), size = 3.5) +
+  coord_equal(xlim = c(-1, 1), ylim = c(-1, 1)) + OUR_THEME + 
+  scale_x_continuous(name = 'Dimension 1') +
+  scale_y_continuous(name = 'Dimension 2')
+print(p)
+dev.off()
+
+rep_fun = function(i, init="torgerson"){
+	print(i)
+	dt_rep <- copy(dt)
+	bci_rep_tool <- function(sdd){
+	  v = sdd[, rep(t, N)]
+	  spl <- data.table(t=as.integer(sample(v, size=length(v),replace = T)))
+	  spl <- spl[, .(N_boot = .N), by=t]
+	  o <- spl[sdd, on='t']
+	  o[, N_boot := ifelse(is.na(N_boot), 0, N_boot)]
+  	  o[, N := N_boot]
+	  o
+	}
+	if(i >1)
+		dt_rep <- dt_rep[,bci_rep_tool(.SD), by=id]
+
+	start_dt <- rejoin(behavr::bin_apply_all(dt_rep, N, x=t, x_bin_length=hours(1), wrap_x_by=days(1)))
+	start_dt <- start_dt[label_itc %in% c(2,6,7,8,9,10,16, 17)]
+	start_dt = start_dt[, .(N=mean(N)),keyby=.(label_itc,t)]
+
+	labs <- sort(unique(start_dt[,label_itc]))
 
 
-
-vis.gam(mod,  type='response', theta=-35, phi=10)
-vis.gam(mod,  type='response', theta=-130, phi=10)
-
-
-ggplot(test_dt[, .(temp=mean(temp), last_24h_temp = mean(last_24h_temp)), by=t], aes(temp, last_24h_temp)) + geom_point() 
-
-ggetho(test_dt, aes(t, last_24h_temp)) + stat_pop_etho()
-ggetho(test_dt, aes(t, N),summary_time_window = days(1)) + stat_pop_etho()
-ggetho(test_dt, aes(t, N),summary_time_window = days(1)) + stat_pop_etho()
-
-
-
-test_dt[, N_dusk := ifelse(zt > hours(10) & zt < hours(14), N, 0)]
-test_dt[, N_dawn := ifelse(zt > hours(22) | zt < hours(02), N, 0)]
-
-ggetho(test_dt, aes(t, N),
-       summary_time_window = days(1)) +
-  stat_pop_etho()
-
-ggetho(test_dt, aes(t, N_dawn),
-       summary_time_window = days(1)) +
-  stat_pop_etho()
-
-ggetho(test_dt, aes(t, N_dusk),
-       summary_time_window = days(1)) +
-  stat_pop_etho()
-
-ggetho(test_dt, aes(t, N_dusk),
-       summary_time_window = days(1)) +
-  stat_pop_etho()
+	dist_mat <- matrix(0, ncol=length(labs), nrow=length(labs),dimnames=list(labs,labs))
+	combinations <- combn(as.character(labs),2)
+	apply(combinations, 2, function(x){
+	  i = x[1]
+	  j = x[2]
+	  # d  <- mutinformation(start_dt[label_itc == i]$N, start_dt[label_itc == j]$N)
+	  d  <- 1 -cor(start_dt[label_itc == i]$N, start_dt[label_itc == j]$N)
+	  dist_mat[i,j] <<- d
+	  dist_mat[j,i] <<- d
+	  NULL
+	})
+	fit <-  mds(dist_mat, init=init) # k is the number of dim
+}
 
 
-ggplot(test_dt[,.(temp = mean(temp), 
-                  N_dusk = mean(N_dusk),
-                  N_dawn = mean(N_dawn)) ,by='day'], 
-       aes(temp, N_dawn)) + geom_point() + geom_smooth()
-
-ggetho(test_dt, aes(t, N), time_wrap = hours(24), summary_FUN = sum) + stat_pop_etho()
-
-test_dt[, high_temp := last_24h_temp > 20]
-ggetho(test_dt[high_temp == TRUE], aes(t, N), time_wrap = hours(24), summary_FUN = mean) + stat_pop_etho() + 
-  coord_cartesian(ylim = c(0,.5))
-
-ggetho(test_dt[high_temp == FALSE], aes(t, N), time_wrap = hours(24), summary_FUN = mean) + stat_pop_etho() +
-  coord_cartesian(ylim = c(0,.5))
+set.seed(678934)
+l = list(rep_fun(1))
+l <- c(lapply(2:500, rep_fun, init=torgerson(l[[1]]$confdist)))
 
 
+ref = l[[1]]
 
 
+pc_res <- lapply( 2:length(l),function(i){
+	x = l[[i]]
+	x_pc <- Procrustes(ref$conf, x$conf)$Y
+	d <- as.data.table(x_pc)
+	d[, id :=  rownames(x_pc)]
+	d[, rep := i]
+	d
+})
 
 
+d <- as.data.table(ref$conf)
+d[, id :=  rownames(ref$conf)]
+d[, rep := 1]
+pc_res[[length(pc_res) + 1]] <- d
 
+d <- rbindlist(pc_res)
+d[, taxon:=LABEL_MAP[id]]
 
+p <- ggplot(d, aes(-D1, -D2, colour=taxon))  + 
+  geom_point(size=.1, alpha=.2, shape=16) +
+    geom_point(data=d[rep==1], shape=20) +
+  scale_shape_manual(values=1:length(unique(d$taxon))) +
+  coord_equal(xlim = c(-1, 1), ylim = c(-1, 1)) + OUR_THEME + 
+  scale_x_continuous(name = 'Dimension 1') +
+  scale_y_continuous(name = 'Dimension 2') + 
+  stat_ellipse()
 
-test_dt <- dt[xmv(label_itc)==2]
-test_dt[, t := wt]
+pdf(w=4,h=4, 'mds.pdf')
+print(p)
+dev.off()
 
-test_dt[, device := xmv(device)]
-test_dt[, height := xmv(height)]
-test_dt[, zt := t %% hours(24)]
-
-test_dt[, day := floor(t/days(1)) * days(1)]
-test_dt = test_dt[, .SD[,.(day_mean_temp = mean(temp)), by=day][.SD, on='day'], by=id]
-
-
-test_dt[, high_temp := day_mean_temp > 18]
-ggetho(test_dt[high_temp == TRUE], aes(t, N), 
-       time_wrap = hours(24), 
-       summary_FUN = mean, 
-       summary_time_window = hours(1)) + stat_pop_etho() + 
-  coord_cartesian(ylim = c(0,.15))
-
-ggetho(test_dt[high_temp == FALSE], aes(t, N), time_wrap = hours(24),
-       summary_time_window = hours(1)) + 
-  stat_pop_etho() +
-  coord_cartesian(ylim = c(0,.15))
-
-
-
-# test_dt = test_dt[, last_24h_temp := rollmean(temp, 
-#                                               k=24, 
-#                                               align='right',
-#                                               na.pad = TRUE),
-#                   
-# N_12h_before
-# test_dt[,
-#         .(N=.SD[t %in% t-hours(12)), N]),
-#   by=id]
-
-# warnings()
-
-# test_dt[day]
 # 
-# pred_dt <- as.data.table(expand.grid(zt = hours(0:(48))/2,
-#                                      temp=seq(from=10, to=30, by=5)
-#                                      #light_intensity=seq(from=0, to=1200, by=100)
-# )
-# )
-# 
-# 
-# predict(mod, type='response', exclude= 's(id_factor)')
-# 
-# pred_dt[, N_pred := predict(mod, type='response')]
-# ggplot(pred_dt, aes(y=N_pred, x=zt, col=temp, group=temp)) + geom_line(size=1.5) +
-#   #facet_wrap(~light_intensity) +
-#   scale_colour_gradient(low = "blue", high = "red", na.value = NA) +
-#   scale_x_hours() + stat_summary_bin(test_dt, mapping = aes(zt, N), inherit.aes = FALSE)
-# 
-# ggplot(pred_dt, aes(y=N_pred, x=temp, col=zt, group=zt)) + geom_line() + 
-#   facet_wrap(~hum) + 
-#   scale_colour_gradient(low = "blue", high = "red", na.value = NA)
-# 
-#   varImpPlot(d)
-# d
 
-# dt_day = bin_apply_all(data=dt, y=N_rel, x=t, FUN = sum, x_bin_length = days(1))
-# 
-# dt[, day := round(t / hours(24))]
-# dt[, taxon:=xmv(taxon)]
-# dt_day = dt[,.(N_rel = sum(N_rel), temp=mean(temp)),by=c(key(dt), 'day', 'taxon')]
-# ggplot(dt_day, aes(temp, N_rel), alpha=.1) + geom_point() +
-#   facet_wrap( ~ taxon)
-# 
-# ggetho(dt, aes(y=temp, colour=taxon), summary_time_window = hours(1), time_wrap = hours(24)) +
-#   stat_pop_etho() +
-#   facet_wrap( ~ taxon)
-# # 
-
-
-
-## daily variance in E. rosae /scria
-
-library(mgcv)
-test_dt <- dt
-ggetho(test_dt, aes(wt, N), time_wrap = hours(24)) + stat_pop_etho() +
-  geom_vline(xintercept = hours(c(6,13)))
-
-
-# test_dt = test_dt[, .SD[,.(temp=mean(temp))], by=id]
-test_dt[, t := floor(wt/days(1))]
-test_dt = rejoin(test_dt)[, .SD[,.( N = sum(N),
-                            temp=mean(temp),
-                            # temp_dusk = mean(temp[wzt %between% hours(c(10,13))]),
-                            hum=mean(hum),
-                            # hum_dusk = mean(hum[wzt %between% hours(c(10,13))]),
-                            li=mean(light_intensity)
-                            # li_dusk = mean(light_intensity[wzt %between% hours(c(10,13))])
-                            
-), by=t], by='id,taxon,height']
-
-# test_dt = test_dt[, dtemp := c(0,diff(temp)), by=id]
-test_dt[, id_fact := as.factor(id)]
-
-# p1 <- ggplot(test_dt, aes(t, N)) + stat_summary(geom='ribbon') 
-# p1 <- ggplot(test_dt, aes(t, N)) + stat_summary(geom='ribbon') 
-
-# ggplot(test_dt[ ,.(temp_dusk=mean(temp_dusk), temp=mean(temp)), by=t], 
-#        aes(temp_dusk, temp)) + geom_point() + geom_smooth(method='lm')
-# 
-# ggplot(test_dt[ ,.(hum_dusk=mean(hum_dusk), hum=mean(hum)), by=t], 
-#        aes(hum_dusk, hum)) + geom_point() + geom_smooth(method='lm')
-# 
-# ggplot(test_dt[ ,.(hum=mean(hum), temp=mean(temp)), by=t], 
-#        aes(hum, temp)) + geom_point() + geom_smooth(method='lm')
-# ggplot(test_dt[ ,.(li=mean(li), temp=mean(temp)), by=t], 
-#        aes(li, temp)) + geom_point() + geom_smooth(method='lm')
-
-
-
-ggplot(test_dt[ ,.(N=mean(N), x=mean(temp)), by='t,taxon,height'], aes(x,N, colour=height)) + geom_point() + 
-  geom_smooth(method='lm') + 
-  facet_wrap(~ taxon, scales = "free_y")
-
-ggplot(test_dt[ ,.(N=mean(N), x=mean(hum)), by='t,taxon,height'], aes(x,N, colour=height)) + geom_point() + 
-  geom_smooth(method='lm') + 
-  facet_wrap(~ taxon, scales = "free_y")
-
-ggplot(test_dt[ ,.(N=mean(N), x=mean(li)), by='t,taxon,height'], aes(x,N, colour=height)) + geom_point() + 
-  geom_smooth(method='lm') + 
-  facet_wrap(~ taxon, scales = "free_y")
-
-
-tax = 'Sciaridae'
-tax = 'Edwardsiana'
-tax = 'Muscoidea'
-summary(
-  lm( N ~   li +hum + temp, 
-      test_dt[ taxon==tax ,.(N=mean(N), 
-                                     li=mean(li),
-                                     hum=mean(hum),
-                                     temp=mean(temp)), by='t,taxon'])
-)
-
-
-ggplot(test_dt[ ,.(N=mean(N), x=mean(hum)), by=t], aes(x,N)) + geom_point() + geom_smooth(method='lm')
-ggplot(test_dt[ ,.(N=mean(N), x=mean(hum_dusk)), by=t], aes(x,N)) + geom_point() + geom_smooth(method='lm')
-ggplot(test_dt[ ,.(N=mean(N), x=mean(li)), by=t], aes(x,N)) + geom_point() + geom_smooth(method='lm')
-ggplot(test_dt[ ,.(N=mean(N), x=mean(li_dusk)), by=t], aes(x,N)) + geom_point() + geom_smooth(method='lm')
-
-
-
-# edwa:
-# does env alter phase?
-
-
-library(randomForest)
-rf = 
-  randomForest( N ~ hum_dusk * temp_dusk * li_dusk, 
-    test_dt[ ,.(N=mean(N), hum_dusk=mean(hum), temp_dusk=mean(temp), li_dusk=mean(li)), by=t])
-rf
-
-
-summary(
-  lm( N ~ hum_dusk * temp_dusk, 
-      test_dt[ ,.(N=mean(N), hum_dusk=mean(hum_dusk), temp_dusk=mean(temp_dusk)), by=t])
-)
 

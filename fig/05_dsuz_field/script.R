@@ -6,7 +6,6 @@ library(ggetho)
 library(behavr)
 library(maptools)
 library(patchwork)
-
 library(mgcv)
 library(gratia)
 source('../helpers.R')
@@ -14,7 +13,7 @@ source('../helpers.R')
 dt <- make_dt()
 
 pdf('plots.pdf', w=10, h=10)
-{
+
 common_layers <- function(ncol=1, wrap=TRUE){
   o <-                       list(
                         theme_bw(),
@@ -70,20 +69,12 @@ p <- ggetho(dt, aes(x=wt,y=N, colour=vinegar_bait), summary_time_window = hours(
 print(p)
 
 dev.off()
-}
+
 ####
 # Susukii
 
+test_dt <- dt[xmv(label_itc) %in% c(4,5,15)]
 
-test_dt <- dt[xmv(label_itc) %in% c(4)]
-test_dt_droso <- dt[xmv(label_itc) %in% c(5)]
-test_dt[, device := xmv(device)]
-test_dt_droso[, device := xmv(device)]
-
-fid_dt <- dt[xmv(label_itc) %in% c(15)]
-fid_dt[, device := xmv(device)]
-
-test_dt <- bind_behavr_list(list(fid_dt, test_dt,test_dt_droso))
 
 tmp_dt <- cbind(sun_rise_set(test_dt[,start_datetime, meta=T], LATITUDE, LONGITUDE),
       start_datetime = test_dt[,start_datetime, meta=T])
@@ -93,242 +84,183 @@ test_dt[, wstart_datetime := tmp_dt[,wzt(start_datetime, sunrise,sunset)], meta=
 
 summary_dt <- rejoin(test_dt[, .(N=sum(N)), by=id])
 n_per_tax = summary_dt [,.(N_total=sum(N)), by=taxon]
+n_per_tax_bait_id = summary_dt [,.(N=sum(N)), by='taxon,vinegar_bait,id']
+n_per_tax_bait_id[, mean(N), by='taxon,vinegar_bait']
 
-pdf(w=6,h=4, 'D.suzukii.pdf')
-ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
+
+pdf(w=8,h=5, 'D.suzukii.pdf')
+p1 <- ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
              summary_time_window = hours(24)) +
-                geom_vline(data=test_dt[, meta=T], aes(xintercept=wstart_datetime), col='blue',linetype=2)+
+                geom_vline(data=test_dt[, .(start_time=floor(min(wt)/days(1)) * days(1) ), by=start_datetime], aes(xintercept=start_time), col='blue',linetype=2)+
                 stat_pop_etho() +
                 common_layers() +
   geom_label(data=n_per_tax, x=+Inf, y=+Inf, 
              mapping=aes(label=sprintf('N_total = %i',N_total)), inherit.aes = F, vjust = "inward", hjust = "inward")
+p1
 
-
-
-ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
+p2 <- ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
            time_wrap = hours(24),
            time_offset = hours(6), summary_time_window = hours(1)) +
               stat_pop_etho()  +
               common_layers() +
-            stat_ld_annotations() +
-  geom_label(data=n_per_tax, x=+Inf, y=+Inf, 
-             mapping=aes(label=sprintf('N_total = %i',N_total)), inherit.aes = F, vjust = "inward", hjust = "inward")
+              stat_ld_annotations() +
+           geom_label(data=n_per_tax, x=+Inf, y=+Inf, 
+             mapping=aes(label=sprintf('N_total = %i',N_total)), inherit.aes = F, vjust = "inward", hjust = "inward") 
 
 
+print(p1 | p2)
 dev.off()
 
 
-# what is the intraday variation in baited traps?
-# Can we predict it vs other factors?
+## vs baiting renewal
+dt2 <- copy(dt)
+dt2[,t_in_week := as.numeric(datetime -start_datetime, unit='secs') ]
+dt2[, device := xmv(device)]
+dt2 <- dt2[, .(all_insects = sum(N)), by='t,device'][dt2, on=c('t', 'device')]
+setkey(dt2, id)
+dt2 <- behavr(dt2, meta(dt))
+dt2[,cum_insects := cumsum(all_insects), by=id]
+dt2[,cum_N := cumsum(N), by=id]
+dt2[,vinegar_bait := as.factor(xmv(vinegar_bait))]
+dt2[, id_fact := as.factor(id)]
+dt2[, day := floor(t/days(1)) - min(floor(t/days(1)))]
 
 
-test_dt <- dt[xmv(label_itc) %in% c(4)]
-test_dt_droso <- dt[xmv(label_itc) %in% c(5)]
-test_dt[, device := xmv(device)]
-test_dt_droso[, device := xmv(device)]
-test_dt[, N:= N+test_dt_droso[test_dt,N, on=c('device', 'datetime')]]
-test_dt = test_dt[xmv(vinegar_bait) == "Y",]
+sdt <- dt2[, .(n_day_02 = sum(N[t_in_week < days(2)]),
+               n=sum(N),
+               sum_all_insects = sum(all_insects)),
+           by=id]
+
+sdt[, prop_day_02 :=  n_day_02/n]
+
+tdt <- rejoin(sdt[xmv(label_itc) %in% 4:5 & xmv(vinegar_bait) == 'Y'])
+tdt[, .(sd(prop_day_02), mean(prop_day_02))]
+m <- as.matrix(tdt[,.(n_day_02, n- n_day_02)])
+mod <- glm( cbind(n_day_02, n- n_day_02) ~ sum_all_insects + taxon,data=tdt,  family=binomial)
+summary(mod)
 
 test_dt
+p0 <- ggetho(dt2[xmv(label_itc) == 5 ], aes(x=wt, y=cum_insects, 
+                                            colour=vinegar_bait,
+                                            group=interaction(start_datetime,
+                                                              vinegar_bait)), summary_time_window = days(1)) + 
+  stat_pop_etho() + OUR_THEME +
+  scale_x_days(limits = days(c(18485,18535)))  +theme(legend.position="bottom")
+p0  
+p1 <- ggplot(tdt, aes(as.numeric(start_datetime, unit='secs') / days(1),  n= n, n_day_02=n_day_02,
+                      prop_day_02, colour=taxon)) + 
+  geom_smooth(
+    method="glm",
+    method.args=list(family="binomial"),
+    formula = cbind(n_day_02, n- n_day_02) ~ x
+  ) +
+  geom_jitter(height = 0, width=1.5, alpha=.7) +
+  scale_color_manual(values=c( "#042530", "#808000")) +
+  OUR_THEME + scale_x_continuous(limits = c(18485,18535)) +theme(legend.position="bottom")
 
-ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
-             summary_time_window = hours(24)) +
-                geom_vline(data=test_dt[, meta=T], aes(xintercept=wstart_datetime), col='blue',linetype=2)+
-                stat_pop_etho() +
-                common_layers() +
-                stat_ld_annotations()
+p1
+p2 <- ggplot(tdt, aes(sum_all_insects, prop_day_02, colour=taxon, n= n, n_day_02=n_day_02)) + 
+  geom_point() +
+  scale_color_manual(values=c( "#042530", "#808000")) +
+  geom_smooth(
+    method="glm",
+    method.args=list(family="binomial"),
+    formula = cbind(n_day_02, n- n_day_02) ~ x
+  ) + OUR_THEME +theme(legend.position="bottom")
 
-
-ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),
-           time_wrap = hours(24),
-           time_offset = hours(6) ) +
-              stat_pop_etho()  +
-              common_layers()
-
-p1 <- ggetho(test_dt,
-             aes(x=wt,y=temp), summary_time_window = days(1)) +
-              stat_pop_etho()  +
-              common_layers()
-p2 <- ggetho(test_dt,
-             aes(x=wt,y=N), summary_time_window = days(1)) +
-              stat_pop_etho()  +
-              common_layers()
-
-p1 <- ggetho(test_dt,
-             aes(x=wt,y=temp),
-           time_wrap = hours(24),
-           time_offset = hours(6) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations() + scale_y_continuous(name=expression(Temperature~(C)))
-p2 <- ggetho(test_dt,
-             aes(x=wt,y=N),
-           time_wrap = hours(24),
-           time_offset = hours(6), summary_time_window=hours(1) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations()
-
-p1/p2
-
- ggplot(test_dt,  aes(x=wzt,y=temp, z=N)) +
-   stat_summary_2d(fun = sum, binwidth = c(hours(1),3), drop = 0) + scale_x_hours()
-
-test_dt[, id_fact := as.factor(id)]
-test_dt[, day := floor(wt/days(1)) * days(1)]
-test_dt = test_dt[, .SD[,.(day_mean_temp = mean(temp),
-                           day_mean_hum = mean(hum),
-                           day_mean_li = mean(light_intensity)
-                           ), by=day][.SD, on='day'], by=id]
-
-ggplot(test_dt,  aes(x=wzt,y=day_mean_temp, z=N)) +
-   stat_summary_2d(fun = sum, binwidth = c(hours(1),3), drop = 0) + scale_x_hours()
-
-
-
-ggplot(test_dt,  aes(x=wzt,y=day_mean_temp, z=N)) +
-   stat_summary_2d(fun = mean, binwidth = c(hours(1),3), drop = 0) + scale_x_hours()
-
-
-test_dt
-
-
-pdf(w=6,h=4, 'temp.pdf')
-p1 <- ggetho(test_dt,
-             aes(x=wt,y=temp)) +
-              stat_pop_etho()  +
-              common_layers()
-
-p2 <- ggetho(test_dt, aes(x=wt,y=temp),
-           time_wrap = hours(24),
-           time_offset = hours(6) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations()
-
-p1/p2
-dev.off()
-
-pdf(w=6,h=4, 'E.rosae.pdf')
-test_dt <- dt[xmv(label_itc) == 2]
-tmp_dt <- cbind(sun_rise_set(test_dt[,start_datetime, meta=T], LATITUDE, LONGITUDE),
-                start_datetime = test_dt[,start_datetime, meta=T])
-test_dt[, wstart_datetime := tmp_dt[,wzt(start_datetime, sunrise,sunset)], meta=T]
-
-p1 <- ggetho(test_dt[w_datetime <= '2020-08-30'],
-             aes(x=wt,y=N),
-           time_wrap = hours(24),
-           time_offset = hours(6) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations()
-
-p2 <- ggetho(test_dt[w_datetime > '2020-08-30'], aes(x=wt,y=N),
-           time_wrap = hours(24),
-           time_offset = hours(6) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations()
-p1/p2
-
-test_dt[ , week:=as.character(start_datetime),meta=T]
-
-ggetho(test_dt, aes(x=wt,y=N, colour=week),
-           time_wrap = hours(24),
-           time_offset = hours(6),summary_time_window = hours(1) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations() +
-            facet_wrap( ~ week, ncol=1, scales = 'free_y')
-
-ggplot(test_dt,  aes(x=wzt,y=day_mean_temp, z=N)) +
-   stat_summary_2d(fun = sum, binwidth = c(hours(1),3), drop = 0) + scale_x_hours()
-
-
+pdf(w=8,h=5, 'D.suzukii-bait_decay.pdf')
+print((p0/p1) |p2)
 dev.off()
 
 
-test_dt[, id_fact := as.factor(id)]
-test_dt[, day := floor(wt/days(1)) * days(1)]
-test_dt = test_dt[, .SD[,.(day_mean_temp = mean(temp),
-                           day_mean_hum = mean(hum),
-                           day_mean_li = mean(light_intensity)
-                           ), by=day][.SD, on='day'], by=id]
 
-mod <- bam(N ~ ti(wzt, bs="cp") +
-            ti(day) + ti(wzt,day) +
-            #s(bait, bs='fs')+
-            #s(day_mean_hum) +
-            s(day_mean_temp) +
-            #s(day_mean_li) +
-            s(id_fact,  bs='re'),
-           data=test_dt,
-           family = 'poisson', select = TRUE, nthreads = 4)
+wilcox.test(n ~ vinegar_bait,rejoin(sdt[xmv(label_itc) %in% 15 ]))
 
 
-summary(mod)
-AIC(mod)
-gratia::draw(mod)
-vis.gam(mod,  type='response', theta=60, phi=30)
-
-test_dt[, N_pred:=predict(mod, test_dt, type='response')]
-
-
-
-p1 <- ggetho(test_dt, aes(x=wt,y=N_pred, colour=week),
-           time_wrap = hours(24),
-           time_offset = hours(6),summary_time_window = hours(1) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations() +
-            facet_wrap( ~ week, ncol=1, scales = 'free_y')
-
-p2 <- ggetho(test_dt, aes(x=wt,y=N, colour=week),
-           time_wrap = hours(24),
-           time_offset = hours(6),summary_time_window = hours(1) ) +
-              stat_pop_etho()  +
-              common_layers() +
-            stat_ld_annotations() +
-            facet_wrap( ~ week, ncol=1, scales = 'free_y')
-
-
-p1 | p2
-
-
-
-##### temp affects e. rosa daily rhythm
-test_dt <- dt[xmv(label_itc)==2]
-test_dt[, t := floor(wt/hours(1)) * hours(1)]
-test_dt = test_dt[, .SD[,.( N = sum(N),
-                            temp=mean(temp)
-), by=t], by=id]
-
-
-test_dt[, device := xmv(device)]
-test_dt[, zt := t %% hours(24)]
-
-test_dt[, day := floor(t/days(1)) * days(1)]
-test_dt = test_dt[, .SD[,.(day_mean_temp = mean(temp)), by=day][.SD, on='day'], by=id]
-test_dt = test_dt[, last_24h_temp := rollmean(temp, 
-                                              k=24, 
-                                              align='right',
-                                              na.pad = TRUE),
-                  by=device]
-test_dt[, id_fact := as.factor(id)]
-test_dt[, height := as.factor(height)]
-
-
-mod <- gam(N ~ s(zt, bs="cp" ) +  s(day_mean_temp) +
-             te(zt, day_mean_temp) +
-             s(id_fact,   bs='re'), # include trap height nested in id!?
-           # s(height,  by=id_fact, bs='re'), # include trap height nested in id!?
-           data=test_dt,
-           family = 'poisson', select = TRUE)
-summary(mod)
-AIC(mod)
-
-
-
-vis.gam(mod,  type='response', theta=-35, phi=10)
-vis.gam(mod,  type='response', theta=-20, phi=20)
-vis.gam(mod,  type='response', theta=-130, phi=10)
+# 
+# ggetho(dt2[xmv(label_itc) == 5 ], aes(x=wt, y=N, colour=vinegar_bait), summary_time_window = days(1)) + stat_pop_etho()
+# 
+# ggplot(dt2[xmv(label_itc) == 4 & xmv(vinegar_bait) =='Y' ], aes(x=t_in_week, y=cum_insects))  +
+#   geom_line(aes(y=cum_N, group=id), 
+#             col='red', 
+#             data = dt2[xmv(label_itc) %in% c(5) & xmv(vinegar_bait) =='Y']) +
+#   geom_line(aes(group=id))  +  facet_grid( device ~ as.factor(start_datetime))
+# 
+# 
+# 
+# 
+# ggplot(dt2[xmv(label_itc) == 8 & xmv(vinegar_bait) =='N' ], aes(x=t_in_week, y=cum_insects))  +
+#   geom_line(aes(group=id))  +  facet_grid( device ~ as.factor(start_datetime))
+# 
+# 
+# 
+# 
+# 
+# p1 <- ggetho(dt2[xmv(label_itc) == 4 ], aes(x=wt, y=N, colour=vinegar_bait), summary_time_window = days(1)) + stat_pop_etho()
+# p2 <- ggetho(dt2[xmv(label_itc) == 2 ], aes(x=wt, y=N, colour=vinegar_bait), summary_time_window = days(1)) + stat_pop_etho() 
+# p3 <- ggetho(dt2[xmv(label_itc) == 5 ], aes(x=wt, y=cum_insects, colour=vinegar_bait, 
+#                                       group=interaction(start_datetime,vinegar_bait)), summary_time_window = days(1)) + stat_pop_etho()
+# p1/p2/p3
+# 
+# mod = bam(N ~ 
+#             s(wzt, bs="cp") + 
+#             cum_insects+
+#             t_in_week +
+#             s(id_fact,  bs='re'), 
+#           data=dt2[xmv(label_itc) %in% c(4)  &  xmv(vinegar_bait) == 'Y'],
+#           family = 'poisson', select = TRUE, nthreads = 4)
+# 
+# summary(mod)
+# vis.gam(mod, view=c("cum_insects","wzt"), type='response', phi=40, theta=80)
+# mod = bam(all_insects ~ 
+#             s(wzt, bs="cp") + 
+#             cum_insects+
+#             t_in_week +
+#             s(id_fact,  bs='re'), 
+#           data=dt2[xmv(label_itc) %in% c(5)  &  xmv(vinegar_bait) == 'Y'],
+#           family = 'poisson', select = TRUE, nthreads = 4)
+# summary(mod)
+# vis.gam(mod, view=c("cum_insects","t_in_week"), type='response', phi=40, theta=20)
+# # plot.gam(mod)
+# ggplot(sdt, aes(N, s_day02, colour=s_day01)) + geom_point() + facet_wrap( ~ vinegar_bait)
+# 
+# p1 <- ggetho(test_dt[xmv(vinegar_bait)=='N' & xmv(label_itc) == 4], aes(x=wt,y=N,clour=device),
+#              summary_time_window = hours(24)) +
+#             geom_vline(data=test_dt[, .(start_time=floor(min(wt)/days(1)) * days(1) ), by=start_datetime], aes(xintercept=start_time), col='blue',linetype=2)+
+#           stat_pop_etho() +
+#   common_layers() +
+#   geom_label(data=n_per_tax, x=+Inf, y=+Inf, 
+#              mapping=aes(label=sprintf('N_total = %i',N_total)), inherit.aes = F, vjust = "inward", hjust = "inward")
+# p1
+# test_dt[xmv(vinegar_bait)=='N' & xmv(label_itc) == 5 ]
+# 
+# 
+# sdt <- dt2[, .(n_day_02 = sum(N[t_in_week < days(2)]),
+#            n=sum(N),
+#            sum_all_insects = sum(all_insects)),
+# by=id]
+# 
+# sdt[, prop_day_02 :=  n_day_02/n]
+# 
+# tdt <- rejoin(sdt[xmv(label_itc) %in% 4:5 & xmv(vinegar_bait) == 'Y'])
+# 
+# tdt[, .(sd(prop_day_02), mean(prop_day_02))]
+# m <- as.matrix(tdt[,.(n_day_02, n- n_day_02)])
+# mod <- glm( cbind(n_day_02, n- n_day_02) ~ sum_all_insects + taxon,data=tdt,  family=binomial)
+# 
+# 
+# p0 <- ggplot(tdt, aes(start_datetime, sum_all_insects, colour=taxon))  + geom_jitter()
+# p0
+# p1 <- ggplot(tdt, aes(start_datetime, prop_day_02, colour=taxon)) + geom_jitter() + geom_smooth(method='lm')
+# p2 <- ggplot(tdt, aes(sum_all_insects, prop_day_02, colour=taxon, n= n, n_day_02=n_day_02)) + 
+#           geom_jitter() + geom_smooth(
+#             method="glm",
+#             method.args=list(family="binomial"),
+#             formula = cbind(n_day_02, n- n_day_02) ~ x
+#           )
+#   
+#   # geom_ribbon(aes(sum_all_insects, ymin=y_pred-y_pred_sd,
+#   #                                 ymax=y_pred +y_pred_sd , 
+#   #                                 fill=taxon), pred_dt, inherit.aes = F)
+# p1/p2
+# 

@@ -96,10 +96,10 @@ wzt <- function(t, day_onset, night_onset, next_day_onset=NULL, output_as_zt=FAL
   night_onset  <- day_onset + day_length
   next_day_onset <- floor(t+1) + next_day_onset  %% 1
 
-  # Not used for now, assume next sunrise is 24h  after previous
+  # Not used for now, assume next sunrise is 24h after previous
   z_next_day_onset = next_day_onset - day_onset
 
-  # the times modulo 24h (ZT), where zt=0 => sunrise
+  # the times modulo 24h (ZT), where zt = 0 => sunrise
   z = (t - day_onset) %% 1
   a = 1/(2 * day_length)
   a_prime = 1/(2 * (1 - day_length))
@@ -167,11 +167,14 @@ make_dt <- function(){
   metadata = metadata[, .SD, keyby=id]
   
   dt = behavr(dt, metadata)
-  dt[, taxon:=LABEL_MAP[as.character(label_itc)], meta=TRUE]
+  dt[, taxon := factor(LABEL_MAP[as.character(label_itc)], levels=LABEL_MAP), meta=TRUE]
+  dt[, label_itc := factor(label_itc, levels=names(LABEL_MAP)), meta=TRUE]
+  
   
   dt[,t:=as.numeric(datetime, units='secs')]
   dt[, zt := t %% days(1)]
   
   dt[,wt:=as.numeric(w_datetime, units='secs')]
   dt[, wzt := wt %% days(1)]
+  
 }
