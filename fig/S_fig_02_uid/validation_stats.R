@@ -1,8 +1,3 @@
-# Title     : TODO
-# Objective : TODO
-# Created by: quentin
-# Created on: 25/11/2020
-
 library(data.table)
 library(ggplot2)
 library(patchwork)
@@ -11,6 +6,7 @@ source('../helpers.R')
 
 l <- jsonlite::fromJSON('./validation_results/results.json')
 dt <- as.data.table(l)
+dt <- dt[grep('2020-', dt$filename), ]
 
 dt[, .(precision = sum(in_gt & in_im)/ sum(in_im),
 		recall = sum(in_gt & in_im)/ sum(in_gt)),
@@ -69,5 +65,8 @@ mean(dt[in_gt==T,area > 1000])
 dt[area > 1000, .(precision = sum(in_gt & in_im)/ sum(in_im),
 		recall = sum(in_gt & in_im)/ sum(in_gt)),
 	]
+
+ 
+
 
 
