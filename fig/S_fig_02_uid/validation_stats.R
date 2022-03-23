@@ -5,8 +5,9 @@ library(jsonlite)
 source('../helpers.R')
 
 l <- jsonlite::fromJSON('./validation_results/results.json')
-dt <- as.data.table(l)
-dt <- dt[grep('2020-', dt$filename), ]
+dt_all_data <- as.data.table(l)
+
+dt <- dt_all_data[grep('2020-', dt_all_data$filename), ]
 
 dt[, .(precision = sum(in_gt & in_im)/ sum(in_im),
 		recall = sum(in_gt & in_im)/ sum(in_gt)),
@@ -30,7 +31,7 @@ p2 <- ggplot(dt[in_gt==T], aes(area)) +
 # fixme, here use a GAM to fit the smooth
 
 x_limits = c(30, 2e5)
-y_hist_limits = c(0,1000)
+y_hist_limits = c(0,1200)
 
 layers = function(y_name){list(
 	geom_smooth(method="gam", method.args = list(family = "binomial")),
@@ -68,5 +69,11 @@ dt[area > 1000, .(precision = sum(in_gt & in_im)/ sum(in_im),
 
  
 
+dt <- dt_all_data[grep('2021-', dt_all_data$filename), ]
+dt[, .(precision = sum(in_gt & in_im)/ sum(in_im),
+                  recall = sum(in_gt & in_im)/ sum(in_gt)),
+]
 
-
+dt[area > 1000, .(precision = sum(in_gt & in_im)/ sum(in_im),
+                  recall = sum(in_gt & in_im)/ sum(in_gt)),
+]

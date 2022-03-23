@@ -173,6 +173,9 @@ print((p0/p1) |p2)
 dev.off()
 
 
+wilcox.test(n ~ vinegar_bait,rejoin(sdt[xmv(label_itc) %in% 4 ]))
+
+wilcox.test(n ~ vinegar_bait,rejoin(sdt[xmv(label_itc) %in% 5]))
 
 wilcox.test(n ~ vinegar_bait,rejoin(sdt[xmv(label_itc) %in% 15 ]))
 

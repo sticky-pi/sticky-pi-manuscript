@@ -81,7 +81,7 @@ test_dt[, wstart_datetime := tmp_dt[,wzt(start_datetime, sunrise,sunset)], meta=
 
 pdf(w=18,h=8, 'misc.pdf')
 
-ggetho(test_dt, aes(x=wt,y=N),
+p <- ggetho(test_dt, aes(x=wt,y=N),
              summary_time_window = hours(24)) +
                 stat_pop_etho() +
                 common_layers(ncol = 43) 
@@ -195,7 +195,7 @@ pc_res[[length(pc_res) + 1]] <- d
 d <- rbindlist(pc_res)
 d[, taxon:=LABEL_MAP[id]]
 
-p <- ggplot(d, aes(-D1, -D2, colour=taxon))  + 
+p <- ggplot(d, aes(-D1, D2, colour=taxon))  +
   geom_point(size=.1, alpha=.2, shape=16) +
     geom_point(data=d[rep==1], shape=20) +
   scale_shape_manual(values=1:length(unique(d$taxon))) +

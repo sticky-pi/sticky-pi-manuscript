@@ -124,9 +124,9 @@ make_dt <- function(){
   
   image_meta_dt <- fread('db_snapshot/images.csv')
   image_meta_dt = image_meta_dt[,.(datetime,device,  
-                                   temp,hum, no_flash_shutter_speed, no_flash_bv, 
-                                   no_flash_iso, no_flash_exposure_time)]
-  image_meta_dt[, light_intensity := compute_light_intensity(no_flash_exposure_time, no_flash_bv, no_flash_iso)]
+                                   temp,hum, no_flash_digital_gain, no_flash_analog_gain,
+                                    no_flash_exposure_time)]
+  image_meta_dt[, light_intensity := compute_light_intensity(no_flash_exposure_time, no_flash_digital_gain, no_flash_analog_gain)]
   image_meta_dt[, datetime := fasttime::fastPOSIXct(datetime, tz='UTC')]
   
   tmp_metadata = metadata[, .(device, start_datetime)]
