@@ -75,4 +75,7 @@ p[peak==1, period/hours(1), by=condition]
 
 # number captured
 wilcox.test(V1 ~ condition, rejoin(dt[,max(N), by=id]))
-# 
+#
+
+
+summary_dt <- rejoin(per_dt[period==days(1)])

@@ -67,5 +67,19 @@ dt <- dt[t > days(- 0.5) & t <days(3)]
 dt[,condition := factor(condition,levels = names(PALETTE)),meta=T]
 cplot(dt, '20200127.pdf', PALETTE)
 
+per_dt <- periodogram(dN, na.omit(dt), FUN = ac_periodogram, resample_rate = 1/mins(10))
+per_dt <- find_peaks(per_dt)
+
+summary_dt <- rejoin(per_dt[period==days(1)])
+summary_dt
+
+ggplot(summary_dt, aes(period_group, period, fill= period_group)) +
+        geom_boxplot(outlier.colour = NA) +
+        geom_jitter(aes(size=power -  signif_threshold), alpha=.5) +
+        scale_y_hours(name = "Period")
 
 rejoin(dt[, .(mean(dN)), by=id])[,.(mean(V1), sd(V1)),  by=condition]
+
+
+summary_dt <- rejoin(per_dt[period==days(1)])
+
