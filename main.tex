@@ -119,10 +119,10 @@
 		\subsection*{Sticky Pi device and Platform}
 		
 		We built the Sticky Pi (Fig.~\ref{fig:01}A-C), a device that captures insects on a sticky card and images them every twenty minutes. Compared to other methods, our device acquires high-quality images at high frequency, hence providing a fine temporal resolution on insect captures. Devices are equipped with a temperature and humidity sensor and have two weeks of autonomy (without solar panels). Sticky Pis are open-source, 3d printed and inexpensive (<~200~USD). 
-		Sticky Pis can be fitted with cages to prevent small vertebrates to predate trapped insects.
-		Another unique feature is their camera-triggered backlit flashlight, which enhances the contrast, reduces glare and allows for night-time imaging. Most sticky cards available on the market are thin and translucent, which allows for transmitted light. 
+		Sticky Pis can be fitted with cages to prevent small vertebrates from predating trapped insects.
+		Another unique feature is their camera-triggered backlit flashlight, which enhances the contrast, reduces glare and allows for night-time imaging. Most sticky cards available on the market are thin and translucent, which allows for the transmission of light. 
 		White light was chosen for its versatility: sticky cards with different absorption spectra can be used. 
-        For outdoor use, the camera's built-in infrared-cut filter was left. 
+        For outdoor use, the camera's built-in infrared-cut filter was not removed. 
         Such filters, which remove infrared light, are standard in photography as they reduce chromatic aberrations.
 		As a result, we can discern 3~mm-long insects on a total visible surface of 215 cm² (Fig.~\ref{fig:01}D-E), which is sufficient to identify many taxa. In order to centralise, analyse and visualise the data from multiple devices, we developed a scalable platform (Supplementary Fig.~S\ref{supfig:01}), which includes a suite of services: an Application Programming Interface, a database and an interactive web application (Supplementary Video~1). Deployment and maintenance instructions are detailed in our documentation (\href{https://doc.sticky-pi.com/web-server.html}{https://doc.sticky-pi.com/web-server.html}).
 		
@@ -150,10 +150,10 @@
 		
 		\subsection*{Sticky Pis can quantify circadian activity in laboratory conditions}
 		To test whether capture rate on a sticky card could describe the circadian activity of an insect population, we conducted a laboratory experiment on vinegar flies, \emph{Drosophila melanogaster} [Diptera: Drosophilidae], either in constant light (LL) or constant dark (DD), both compared to control populations held in 12:12 h Light:Dark cycles (LD) (Fig.~\ref{fig:04}). From the extensive literature on \emph{D. melanogaster}, we predicted a crepuscular activity LD and DD (flies are “free-running” in DD), but no rhythm in LL\cite{tataroglu_studying_2014}. We placed groups of flies in a large cage that contained a single Sticky Pi (simplified for the laboratory and using infrared light; Methods section).
-		Due to limited resources, the DD and LL experiments were performed independently, and each compared to their own internal LD control.
-        The use of a inferior optics and infrared lighting resulted in lower quality images where insects were often blurry.
-        However, in this simplified scenario, there were no occlusion, and the classification was binary (fly \emph{v.s.} background).
-        Therefore, we used a simplified approach: we trained and applied independent Mask-RCNN to segment flies from their background. 
+		The DD and LL experiments were performed independently, and each compared to their own internal LD control.
+        The use of a infrared optics and lighting resulted in lower quality images (\emph{i.e.} reduced sharpness).
+        However, in this simplified scenario, there were no occlusions, and the classification was binary (fly \emph{v.s.} background).
+        Therefore, we used a direct approach: we trained and applied independent Mask-RCNN to segment flies from their background. 
         Then, rather than tracking insects (using our SIM), we extracted the raw counts from each frames and applied a low-pass filter (see Methods section).
 		Consistent with previous studies on circadian behaviour of \emph{D. melanogaster}, populations in both LD and DD conditions exhibited strong rhythmic capture rates, with an approximate period of 24 h: 23.8 h and 23.67 h, respectively. For instance, their overall capture rate was approximately 0.6 h$^{-1}$ between ZT22 and ZT23 h, but peaked at 9.5 h$^{-1}$ between ZT01 and ZT02 h (Fig.~\ref{fig:04}C,E). 
 		The average autocorrelation (measure of rhythmicity), with a 24 h lag, for the both DD populations and their internal control were high and significant: 0.34 ($\text{p-value} < 10^{-3}$, N=6, t-test) and 0.35 ($\text{p-value} = 2 \times{} 10^{-3}$, N=6, t-test), respectively. 
@@ -165,9 +165,9 @@
 		
 		\subsection*{Sticky Pis quantify activity rhythms of wild \emph{Drosophila suzukii}}
 		
-		To test the potential of the Sticky Pis to monitor wild populations of free-moving insects in the field, we deployed ten traps in a blackberry field inhabited by the well-studied and important pest species \emph{D. suzukii} (see Methods section). Like \emph{D. melanogaster}, \emph{D. suzukii} has been characterised as crepuscular both in the laboratory\cite{shaw_control_2019} and, with manual observations, in the field\cite{swoboda-bhattarai_diurnal_2020}. Since capture rates can be very low without attractants\cite{swoboda-bhattarai_diurnal_2020}, we baited half (five) of our traps with apple cider vinegar (see Methods section). In addition to \emph{D. suzukii}, we wanted to simultaneously describe the activity of lesser-known species in the same community. In particular, \emph{D. suzukii} and other closely related Drosophila are attacked by parasitoid wasps [Hymenoptera: Figitidae], two of which (\emph{Leptopilina japonica} and \emph{Ganaspis brasiliensis}) have recently arrived in our study region\cite{abram_new_2020}. Their diel activity has not yet been described. In Figure~\ref{fig:05}, we show the capture rate of male \emph{D. suzukii}, other putative Drosophilidae and parasitoid wasps throughout the seven-week trial (Fig.~\ref{fig:05}A) and throughout an average day (Fig.~\ref{fig:05}B). Our results corroborate a distinctive crepuscular activity pattern for male \emph{D. suzukii} and other putative drosophilids.
-
+		To test the potential of the Sticky Pis to monitor wild populations of free-moving insects in the field, we deployed ten traps in a blackberry field inhabited by the well-studied and important pest species \emph{D. suzukii} (see Methods section). Like \emph{D. melanogaster}, \emph{D. suzukii} has been characterised as crepuscular both in the laboratory\cite{shaw_control_2019} and, with manual observations, in the field\cite{swoboda-bhattarai_diurnal_2020}. Since capture rates can be very low without attractants\cite{swoboda-bhattarai_diurnal_2020}, we baited half (five) of our traps with apple cider vinegar (see Methods section). In addition to \emph{D. suzukii}, we wanted to simultaneously describe the activity of lesser-known species in the same community. In particular, \emph{D. suzukii} and other closely related Drosophila are attacked by parasitoid wasps [Hymenoptera: Figitidae], two of which (\emph{Leptopilina japonica} and \emph{Ganaspis brasiliensis}) have recently arrived in our study region\cite{abram_new_2020}. Their diel activity has not yet been described. In Figure~\ref{fig:05}, we show the capture rate of male \emph{D. suzukii}, other putative Drosophilidae and parasitoid wasps throughout the seven-week trial (Fig.~\ref{fig:05}A) and throughout an average day (Fig.~\ref{fig:05}B). 
 		
+		Our results corroborate a distinctive crepuscular activity pattern for male \emph{D. suzukii} and other putative drosophilids.
 		For instance, 68.0\% ($CI_{95\%} =  [63.9, 71.3]$, 10,000 bootstrap replicates) of \emph{D. suzukii} and 
 		57.8\% ($CI_{95\%} =  [53.2, 61.6]$, 10,000 bootstrap replicates) of the other Drosophilids.
 		 occurred either in the four hours around dawn ($WZT \in [8, 14]$ h) or dusk ($WZT < 2$ or $WZT > 22$ h) -- under a time-uniform capture null hypothesis, we would expect only $1/3$ of captures in these 8 hours.
@@ -180,9 +180,9 @@
 		
 		Berry fields are inhabited by a variety of insects for which we aimed to capture proof-of-concept community chronoecological data. In a separate trial, we placed ten Sticky Pis in a raspberry field and monitored the average daily capture rate of eight selected taxa (Fig.~\ref{fig:06}A) over four weeks – we selected these eight taxa based on the number of individuals, performance of the classifier (Fig.~\ref{fig:03}), and taxonomic distinctness (Supplementary Fig.~S\ref{supfig:04} shows the other classified taxa). We then defined a dissimilarity score and applied multidimensional scaling to represent temporal niche proximity in two dimensions (see Methods section). We show that multiple taxa can be monitored simultaneously, and statistically partitioned according to their temporal niche (Fig.~\ref{fig:06}B). Specifically, as shown in Fig.~\ref{fig:06}A, sweat bees (\emph{Lasioglossum laevissimum}), large flies (Calyptratae) and hoverflies (Syrphidae) show a clear diurnal activity pattern with a capture peak at solar noon (Warped Zeitgeber Time = 6h, see Methods section for WZT). Sciaridae gnats were also diurnal, but their capture rate was skewed towards the afternoon, with a peak around WZT = 7h. The Typhlocybinae leafhopper was vespertine, with a single sharp activity peak at sunset (WZT = 11h). The Psychodidae were crepuscular, exhibiting two peaks of activity, at dusk and dawn. Both mosquitoes (Culicidae) and moths (Lepidoptera) were nocturnal. 		
 		
-        We wondered to what extent the presence of previous insects on a trap impacted its subsequent capture (\emph{e.g.}, if trap became saturated by insects). We, first, observed that the cumulative number of all insects on all traps, did not appear to change over time Fig.~S\ref{supfig:07}A. Then, to statistically address this question for individual taxa, we reasoned that if the capture rate was linear, the number of insects captured in the first three days should be 50\% of total (six full days) $N_{[0,3]days} / N_{[0, 6]days} = 1/2$. 
+        We asked to what extent the presence of previous insects on a trap impacted its subsequent capture (\emph{e.g.}, if trap became saturated by insects). We first observed that the cumulative number of all insects on all traps, did not appear to change over time Fig.~S\ref{supfig:07}A. Then, to statistically address this question for individual taxa, we reasoned that if the capture rate was linear, the number of insects captured in the first three days should be 50\% of total (six full days) $N_{[0,3]days} / N_{[0, 6]days} = 1/2$. 
 		Thus, we tested whether the final, total, number of insects (from all taxa) explained the proportion of captured insects $N_{[0,3]days} / N_{[0,6]days}$ (of a given taxa) in the first half of the experiment. 
-		We found no significant effect (Fig.~S\ref{supfig:07}B, linear models, $\text{p-value} > 0.05~\forall~\text{taxa}$,  t-tests on model coefficients).
+		We found that the number of insects captured in the first half of each trial was not different from 1/2 (intercept) and that the number of insects captured did not explain taxa's capture rate (slope) (Fig.~S\ref{supfig:07}B, linear models, $\text{p-value} > 0.05~\forall~\text{taxa}$,  t-tests on model coefficients).
 		
 
 		Together, our findings show that, even without \emph{a priori} knowledge of the diel activity of specific taxa, Sticky Pis can inform about both the community structure and temporal patterns of behaviour of a natural insect community.
@@ -199,19 +199,22 @@
 		We found that segmentation was globally very precise (>90\%) and sensitive (recall > 90\% for objects larger than 2~mm²). Furthermore, our machine-learning pipeline (Fig.~\ref{fig:02}) showed a high overall accuracy of the Insect Tuboid Classifier (83.1\% on average, when merging background and undefined insects, see Fig.~\ref{fig:03}). 
 		Camera technology is quickly improving and our segmentation results with the new Raspberry Pi camera HQ (12.3 Mpx, CS mount) are promising, with preliminary results showing both precision and recall greater than 90\% overall, on the segmentation task.
 		Some of the inaccuracy in segmentation results from transient occlusion or changes in the image quality. 
-		Therefore, tracking (using the Siamese Insect Matcher) likely improves recall as insects that are missed on some frames may be detected on previous or subsequent ones.
+		Therefore, tracking (using the Siamese Insect Matcher) likely improves recall as insects that are missed on some frames may be detected on previous or subsequent frames.
 		
 		
-		Another limitation of our device is the sparsity of the images taken (every 20 minutes). 
+		Another potentially limiting feature of our device is the frequency of the images taken (every 20 minutes). 
 		According to their context and questions, users can program the hardware timer with a different interval.
-		However, we judged three-times-per-hour a good compromise between the time resolution -- an hourly resolution being necessary to study chronobiology or the impact of fast weather variations -- and battery and data storage efficiency.
-		Furthermore, a denser use of the flash light (\emph{e.g.}, every minute) may disturb wildlife\cite{longcore_ecological_2004}.		
+		However, we judged three-times-per-hour a good compromise between time resolution -- an hourly resolution being necessary to study chronobiology or the impact of fast weather variations -- and battery and data storage efficiency.
+		Furthermore, a more frequent use of the flash light (\emph{e.g.}, every minute) may be more of a disturbance to wildlife\cite{longcore_ecological_2004}.		
 		
 		In this respect, our image time lapse approach contrasts with continuous lighter-weight systems such as sensor-based traps, which are suited for high-frequency sampling and were recently employed to study diel activity of a single species (\cite{chen_flying_2014, goldshtein_long-term_2021}).
 		However, sensor-based traps are often limited to scenarios with a priori-targeted species that respond to certain specific olfactory or visual baits – which considerably narrows their applicability\cite{preti_insect_2020}.
-		In contrast, camera-based traps are more generalist as they can passively monitor insects, using machine learning to identify multiple species. Our system importantly captures and keeps individual insect specimens. While this destructive process comes with limitations, 
-		it is also very convenient in naive contexts, where we do not know \emph{a priori} which insects may be present.
-		Indeed, specimens can be used for \emph{a posteriori} visual and DNA-based identification, which would not be possible if animals were released or kept in a common container. Furthermore, trapping insects permanently greatly reduced the risk of recapturing several times the same individuals.
+		In contrast, camera-based traps are more generalist as they can passively monitor insects, using machine learning to identify multiple species. Our system importantly captures and keeps individual insect specimens. 
+		While this destructive process comes with limitations, 
+		it is also essential in naive contexts, where we do not know \emph{a priori} which insects may be present.
+		Indeed, physical specimens are needed for visual or DNA-based taxonomic characterisation, in particular when working on diverse or undescribed communities\cite{turney_non-repeatable_2015}.
+		Keeping individual insects would not be possible if animals were released or kept in a common container. 
+		Furthermore, trapping insects permanently greatly reduced the risk of recapturing the same individuals several times.
 		
 		
 		An important consideration using sticky card is their potential to become saturated with insects. 
@@ -224,15 +227,17 @@
 		We corroborated circadian results that had historically been obtained on individually-housed insects, using heterogeneous populations in large flight cages (Fig.~\ref{fig:04}). This suggests that Sticky Pis could be an alternative tool for laboratory experiments on mixed populations of interacting insects. In the field, we monitored both the seasonal and diel activity of a well-studied pest species: spotted-wing drosophila (\emph{D. suzukii}). Like others before\cite{swoboda-bhattarai_diurnal_2020}, we concluded that wild \emph{D. suzukii} was crepuscular (Fig.~\ref{fig:05}). In the process, we also found that Figitidae wasps – natural enemies of \emph{D. suzukii} – were distinctly diurnal and were most often detected later in the season. Finally, we characterised the diel activity of the flying insect community in a raspberry field, without targeting taxa \emph{a priori} (Fig.~\ref{fig:06}). With only ten devices, over 4 weeks, we were able to reveal the diversity of temporal niches; showing coexisting insects with a wide spectrum of diel activity patterns – \emph{e.g.}, diurnal, crepuscular \emph{vs.} nocturnal; bimodal \emph{vs.} unimodal. An additional and noteworthy advantage of time-lapse photography is the incidental description of unexpected behaviours such as insect predation (Supplementary Video~4) and the acquisition of specimens that eventually escape from traps  (Supplementary Video~5).
 		
 				
-		The probability of capturing an insect on a sticky card depends, at least, on the flying activity, the size of the population and the trap attractiveness (and the ``conversion rate'' – \emph{i.e.}, the probability of trapping an insect given it is attracted). Importantly, Sticky Pis only capture mobile adult insects, and, therefore, cannot explicitly quantify the timing of important behaviours such as mating, feeding, egg laying, emergence and quiescence.
-		Arguably, in many species, locomotion and dispersal is a prerequisite to other activities. Therefore, capture rate implicitly encapsulates a larger portion of the behavioural spectrum.
+		Importantly, any insect trap only gives a biased estimate of the number and activity on insects at a given time.
+		For sticky cards, the probability of capturing an insect depends, at a minimum, on the flying activity, the size of the population and the trap attractiveness (and the ``conversion rate'' – \emph{i.e.}, the probability of trapping an insect given it is attracted). Importantly, Sticky Pis only capture mobile adult insects, and, therefore, cannot explicitly quantify the timing of important behaviours such as mating, feeding, egg laying, emergence and quiescence.
+		However, in many species, locomotion and dispersal are a prerequisite to other activities.
+		Therefore, capture rate implicitly encapsulates a larger portion of the behavioural spectrum.
 		In most cases, the daily variation of population size is likely negligible. In contrast, several factors may render trap attractiveness and conversion rates variable during the day. First, visual cues – which impact a trap’s capture rates\cite{clare_pheromone_2000, sukovata_importance_2020} – vary for any capture substrate (\emph{e.g.}, light intensity and spectral qualities inevitably fluctuate).
 		Second, insects' ability to detect, avoid or escape traps may temporarily differ. Last, the preference for certain trap features could itself be a circadian trait. For instance, the responses of certain insects to colours\cite{lazopulo_daytime_2019} allelochemicals\cite{barrozo_response_2004,eilerts_odor-specific_2018} and semiochemicals\cite{rosen_circadian_2003, schendzielorz_time_2012, zhukovskaya_circadian_1995} is time-modulated.
 		Whilst inconsistencies in trap attractiveness may, in some cases, narrow the scope of the conclusions that can be made with our tool, it also paves the way for research on the diel time budget of many insects.
 		Indeed, studying the contrast in trapping rates between different, ecologically relevant, trap features (\emph{e.g.}, baits, colour and location) could help to develop new and improved trapping methodologies while bridging chronobiology and behavioural ecology.
 		
 		In addition to insect capture rates, Sticky Pis also monitor humidity and temperature, which are both crucial for most insects behaviour and demography \cite{jaworski_effect_2013,pawson_predicting_2017}.
-		This study was performed at the level of a small agricultural field, where the local abiotic variations were minor (see Methods section and reported abiotic conditions in Supplementary Fig.~\ref{supfig:08}). 
+		This study was performed at the level of a small agricultural field, where the local spatial abiotic variations were small compared to the interday variations, and hourly temperatures are mostly confounded by the time of the day (see Methods section and reported abiotic conditions in Supplementary Fig.~\ref{supfig:08}). 
 		In this context, it was, therefore, difficult to statistically study the individual effects of time of the day and abiotic variables (temperature and humidity) on capture rate. 
 		We are confident that Sticky Pi could, scaled at the landscape level, with explicitly different microclimates, help address the interplay between abiotic variables and circadian processes.
 		
@@ -404,12 +409,14 @@
 			Q.G. was funded by the International Human Frontier Science Program Organization (LT000325/2019). This research (funding to P.K.A., C.H.H. and J.C.) is part of Organic Science Cluster 3, led by the Organic Federation of Canada in collaboration with the Organic Agriculture Centre of Canada at Dalhousie University, supported by Agriculture and Agri-Food Canada’s Canadian Agricultural Partnership - AgriScience Program. PKA was supported by funding from Agriculture and Agri-Food Canada. This work was also supported by a Seeding Food Innovation grant from George Weston Ltd. to CHH and JC, and a Canada Research Chair award to CHH. We acknowledge that some of the research described herein occurred on the traditional, ancestral, and unceded \musqueam{} Musqueam territory and on the traditional lands of the Sto:lo people.}
 		
 		\section*{Author contributions statement}
+		Q.G., P.K.A., J.C.  and  C.H.H. conceptualised the project.
 		Q.G., P.K.A. and J.C. conceived the experiments.
 		Q.G. oversaw the image dataset annotations.
 		Q.G. conducted the laboratory experiment. 
 		P.K.A. conducted the field experiments.
-		D.W. characterised the insect vouchers (DNA and images).
+		D.W. characterised the insect specimens (DNA and images).
 		Q.G. analysed the results.
+		J.C. and C.H.H contributed to supervision and funding acquisition.
 		All authors wrote and reviewed the manuscript. 
 		
 		\section*{Additional information}
@@ -542,7 +549,7 @@
 	\includegraphics[width=0.6\linewidth]{fig/S_fig_08_temp_hum/temp_hum.png}
 	\caption{\textbf{Environmental conditions during both experiments.} Temperature and relative humidity throughout field experiment, as recorded by Sticky Pi's sensors (DHT 22). \textbf{A}, the experiment in the raspberry field. \textbf{B}, the experiment in the blackberry field.
 	Black and white rectangles, below and above each plot show days (between sunrise and sunset) and night (between sunset and sunrise) in white and black, respectively. Sun position is inferred through the \texttt{maptools} package\cite{bivand_maptools_2020}.
-	The average between-device standard deviation for hourly temperature and humidity reads was, respectively, 0.68°C and 3.95\% for the raspberry field (A) and 0.63°C and 3.4\% for the blackberry experiment (B).
+	The average between-device standard deviations for hourly temperature and humidity reads were, respectively, 0.68°C and 3.95\% for the raspberry field (A) and 0.63°C and 3.4\% for the blackberry experiment (B).
    }
 	\label{supfig:08}
 	\end{supfig}
@@ -558,7 +565,7 @@
 	\href{https://figshare.com/s/999a3b7a3c23a050b106}{Data on figshare.}
 	
 	\paragraph*{Supplementary Table 2}
-	\textbf{Representative insect vouchers used for DNA barcoding.} 
+	\textbf{Representative insect specimen used for DNA barcoding.} 
 	Data is compiled as an excel spreadsheet with embedded images of the specimens of interest alongside the DNA sequence of their cytochrome c oxidase subunit I (CO1). their DNA-inferred taxonomy and, when relevant, some additional notes. 
 	The printed labels in the images are $5 \times{} 1$ mm wide. The column “label\_in\_article” corresponds to the visually distinct group to which insects were allocated.
 	\href{https://figshare.com/s/bdb7bef8c26065e3dd17}{Data on figshare.}

@@ -1,0 +1,85 @@
+% Author: Ivan Yu
+% Content: WCC Website: https://olincareers.wustl.edu/SiteCollectionDocuments/PDFs/WCC/CoverLetterGuidelines_MBA.pdf
+
+
+\documentclass[12pt,a4paper,roman]{moderncv}      
+\usepackage[english]{babel}
+\usepackage{ragged2e}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}   
+\usepackage{xpatch}
+
+
+\moderncvstyle{classic}                            
+%\moderncvcolor{green} % Bullet point color                          
+
+% Page margins
+%\usepackage[scale=0.7]{geometry} % Page margins
+
+% Your Information, please revise
+\name{Quentin}{Geissmann}
+\title{Geissmann et al. 2021, cover letter}
+\address{Dept.~of~Microbiology~\&~Immunology}{BC Canada}{V6T 1Z3}
+\phone[mobile]{+1 236 979 3141}                   
+\email{quentin.geissmann@ubc.ca}             
+\homepage{https://quentin.geissmann.net/}        
+                   
+
+% \xpatchcmd{<cmd>}{<search>}{<replace>}{<success>}{<failure>}
+\makeatletter
+\xpatchcmd{\makeletterclosing}{\bfseries \@firstname~\@lastname}
+{\includegraphics[width=1.5cm]{signature.png}\par
+	{\bfseries \@firstname~\@lastname, PhD} \par
+	Human Frontier Science Program Postdoctoral Fellow\\
+    Dept.~of~Microbiology~\&~Immunology\\
+	The University of British Columbia
+}
+{}{}
+
+\begin{document}
+
+% Insert Olin Logo
+\begin{minipage}[t]{\textwidth}
+\includegraphics[width=0.70\textwidth]{ubc-logo-2018-fullsig-blue-cmyk.pdf}
+\end{minipage}
+
+\recipient{Dear editors of \emph{PLOS~Biology},}{}
+\opening{\vspace*{-1em}}
+\closing{Sincerely, On behalf of all authors, }{\vspace*{-2em}}
+\makelettertitle
+
+\justifying
+
+
+
+
+\vspace{1.5cm}
+
+
+
+We would like to thank the editorial team and all three reviewers for their thorough work on our original submission. We believe that the comments and questions raised have considerably helped us improve our manuscript. We are glad to be resubmitting a version with some major revisions that address all the points raised during the review process. In this letter, we first summarise the main changes and, second, provide a point-by-point answer to each of the reviewers’ comments.
+
+Summary of changes:
+
+In the original review, the reviewers raised concerns about the performance and applicability of the machine learning tools, in particular from reviewers \#1 and \#2. In addition, reviewer \#2 pointed out that our web-documentation did not explain how to perform the machine learning in practice. 
+Thanks to these comments, we were able to dramatically improve the performance and generality of insect detection and tracking. We did this as follows:
+\begin{itemize}
+	
+\item{} We annotated and added more than 150 new images, including data kindly provided by the community, to the dataset for our segmentation algorithm. Given that these images were acquired with different optics (some of them with a desktop scanner), we have considerably improved the generalisability of our tool. 
+
+\item{} Retraining our algorithm, with a more diverse dataset, has resulted in a massive performance gain on the original data for large insects ($>2mm^2$): we now have $>90$\% precision and recall. In other words, we halved our false-negative rate. We also achieve high performance on the Raspberry Pi HQ camera, which was released after the original work, and will be the new standard ($>92$\% recall and $>96$\% precision on all insects). We also hope to continue collecting community images and improve scope and performance further. 
+
+\item{} To improve usability and replicability of the machine learning tools, we now have a dedicated documentation page (https://doc.sticky-pi.com/ml.html) that explains how to install our tools. We packaged python standalone executables to facilitate the partial use of our tools (rather than relying on a heavy API/database), we provide examples of reference annotated data for the users to practice and we describe annotation procedures. We believe this largely extends the scope of our algorithms, making them much more adoptable. 
+
+\item{} We have reprocessed the relevant manuscript data and redrawn all figures that depended on the updated machine learning.
+
+\item{} We discussed a number of points including the difference between camera-based and sensor-based options; possible pitfalls such as the saturation of traps by insects, which justified a new supplementary figure; the biases in approximating insect activity from capture rate; and the effect of environmental variables.
+
+\end{itemize}
+
+
+\makeletterclosing
+
+\end{document}
+
