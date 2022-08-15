@@ -49,6 +49,8 @@ k = 5
 dt[, dN := filter(dN, rep(1/k, each=k)), by=key(dt)]
 dt <- dt[t > days(-0.5) & t <days(3)]
 dt[,condition := factor(condition,levels = names(PALETTE)),meta=T]
+
+
 cplot(dt, '20200223.pdf', PALETTE)
 
 

@@ -87,6 +87,8 @@ n_per_tax = summary_dt [,.(N_total=sum(N)), by=taxon]
 n_per_tax_bait_id = summary_dt [,.(N=sum(N)), by='taxon,vinegar_bait,id']
 n_per_tax_bait_id[, mean(N), by='taxon,vinegar_bait']
 
+test_dt
+
 
 pdf(w=8,h=5, 'D.suzukii.pdf')
 p1 <- ggetho(test_dt, aes(x=wt,y=N, colour=vinegar_bait),

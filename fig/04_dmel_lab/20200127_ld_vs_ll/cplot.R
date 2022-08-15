@@ -2,6 +2,8 @@
 
 cplot <- function(dt, out, palette){
   pdf(w=10,h=6, out)
+
+
   pl = ggetho(dt, aes(y=N, color =condition, group=id), summary_time_window = mins(10)) +
     stat_ld_annotations() +
     stat_pop_etho() +facet_wrap(~condition*start) + geom_point(size=.5) +
@@ -21,6 +23,7 @@ cplot <- function(dt, out, palette){
   
   per_dt <- periodogram(dN, na.omit(dt), FUN = ac_periodogram, resample_rate = 1/mins(10))
   per_dt
+
   
   pl = ggperio(per_dt, aes(period, power, colour=condition)) + 
     geom_line(aes(group=id), alpha=.5) +

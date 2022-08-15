@@ -43,18 +43,6 @@ s = sapply(1:nrow(excluded_zones), foo)
 s <- as.vector(s)
 
 dt <- dt[!s]
-# 
-# 
-# dt[, t := as.numeric(datetime-xmv(ref_datetime),units="secs")]
-# 
-# dt[, N := runmed(N,5), by=key(dt)]
-# dt[, dN := c(0,diff(N) / diff(t)) * hours(1), by=key(dt)]
-# #dt[, dN := c(0,diff(N))/c(+Inf,diff(t)), by=key(dt)]
-# 
-# 
-# dt <- dt[t > days(1.5)]
-
-
 
 dt[, t := as.numeric(datetime-xmv(ref_datetime),units="secs")]
 dt[, N := runmed(N,5), by=key(dt)]
@@ -65,6 +53,8 @@ dt <- dt[, t := t-days(2)]
 dt <- dt[t > days(- 0.5) & t <days(3)]
 
 dt[,condition := factor(condition,levels = names(PALETTE)),meta=T]
+
+
 cplot(dt, '20200127.pdf', PALETTE)
 
 per_dt <- periodogram(dN, na.omit(dt), FUN = ac_periodogram, resample_rate = 1/mins(10))
